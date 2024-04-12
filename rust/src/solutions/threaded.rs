@@ -2,12 +2,12 @@ use super::*;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread::{self, JoinHandle};
 
-pub fn solve(lines: Box<dyn Iterator<Item = String>>, nb_workers: usize) {
+pub fn solve(lines: FileRows, nb_workers: usize) {
     let stations = build_stations(lines, nb_workers);
     sort_and_print_stations(stations);
 }
 
-fn build_stations(lines: Box<dyn Iterator<Item = String>>, nb_workers: usize) -> Stations {
+fn build_stations(lines: FileRows, nb_workers: usize) -> Stations {
     let threads = spawn_threads(nb_workers);
     let mut stations;
     let thread_ids = (0..nb_workers).cycle();

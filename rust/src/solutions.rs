@@ -13,3 +13,6 @@ fn sort_and_print_stations(stations: Stations) {
         println!("{:?} {:?}", city, temperatures)
     }
 }
+
+
+pub type FileRows = Box<dyn Iterator<Item = String>>;

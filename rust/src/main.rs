@@ -2,6 +2,8 @@ use std::env;
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader};
 use std::usize;
+
+use solutions::FileRows;
 pub mod domain;
 pub mod solutions;
 
@@ -33,10 +35,10 @@ fn parse_parameters() -> io::Result<(String, usize, Option<usize>)> {
     Ok((path, nb_workers, rows))
 }
 
-fn get_file_lines(path: &str, rows: Option<usize>) -> io::Result<Box<dyn Iterator<Item = String>>> {
+fn get_file_lines(path: &str, rows: Option<usize>) -> io::Result<FileRows> {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
-    let mut lines: Box<dyn Iterator<Item = _>> = Box::new(reader.lines().map(|x| x.unwrap()));
+    let mut lines: FileRows = Box::new(reader.lines().map(|x| x.unwrap()));
     if let Some(rs) = rows {
         lines = Box::new(lines.take(rs))
     }

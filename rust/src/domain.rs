@@ -14,7 +14,7 @@ pub fn parse_observation(line: &str) -> Option<Observation> {
     Some(Observation { city, temperature })
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Temperatures {
     min: f32,
     max: f32,

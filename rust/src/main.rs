@@ -1,9 +1,7 @@
-use crate::solutions::baseline;
-use crate::solutions::threaded;
+use std::env;
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader};
 use std::usize;
-
 pub mod domain;
 pub mod solutions;
 
@@ -12,9 +10,14 @@ fn main() -> io::Result<()> {
     let lines = get_file_lines(&path, rows)?;
 
     if nb_workers == 0 {
-        baseline::solve(lines);
+        solutions::baseline::solve(lines);
     } else {
-        threaded::solve(lines, nb_workers);
+        if env::var("RAYON").is_ok() {
+            println!("RAYON");
+            solutions::ray::solve(&path, nb_workers)
+        } else {
+            solutions::threaded::solve(lines, nb_workers);
+        }
     }
     Ok(())
 }

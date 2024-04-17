@@ -9,7 +9,13 @@ fn main() -> io::Result<()> {
     let (path, nb_workers) = parse_parameters()?;
 
     if nb_workers == 0 {
+        if env::var("POLARS").is_ok() {
+            println!("POLARS");
+            solutions::plrs::solve(&path);
+
+        } else {
         solutions::baseline::solve(&path)?;
+        }
     } else {
         if env::var("RAYON").is_ok() {
             println!("RAYON");

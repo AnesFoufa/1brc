@@ -2,6 +2,7 @@ use crate::domain::*;
 use std::collections::HashMap;
 
 pub mod baseline;
+pub mod plrs;
 pub mod ray;
 pub mod threaded;
 

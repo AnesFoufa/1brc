@@ -8,7 +8,7 @@ pub struct Observation {
 }
 
 pub fn parse_observation(line: &str) -> Option<Observation> {
-    let (part1, part2) = line.split_once(";")?;
+    let (part1, part2) = line.trim().split_once(";")?;
     let city: String = part1.into();
     let temperature: f32 = part2.parse().ok()?;
     Some(Observation { city, temperature })

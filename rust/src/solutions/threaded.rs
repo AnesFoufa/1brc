@@ -1,50 +1,65 @@
 use super::*;
-use std::sync::mpsc::{channel, Receiver, Sender};
-use std::thread::{self, JoinHandle};
+use std::fs::{metadata, File};
+use std::io::{BufRead, BufReader, Read, Seek, SeekFrom};
+use std::thread::spawn;
+use std::{u64, usize};
 
-pub fn solve(lines: FileRows, nb_workers: usize) {
-    let stations = build_stations(lines, nb_workers);
+pub fn solve(path: &str, nb_workers: usize) {
+    let file_size = metadata(path).unwrap().len();
+    let chunks = get_chunks(file_size, nb_workers);
+    let handles = chunks.into_iter().map(|(start, end)| {
+        let owned_path = path.into();
+        spawn(move || process_chunk(owned_path, start, end))
+    });
+    let mut stations = HashMap::new();
+    for handle in handles {
+       merge_stations(&mut stations, handle.join().unwrap())
+    }
     sort_and_print_stations(stations);
 }
 
-fn build_stations(lines: FileRows, nb_workers: usize) -> Stations {
-    let threads = spawn_threads(nb_workers);
-    let mut stations;
-    let thread_ids = (0..nb_workers).cycle();
-    for (line, thread_id) in lines.zip(thread_ids) {
-        threads[thread_id].0.send(line).unwrap();
-    }
-    let mut threads_iter = threads.into_iter();
-    let (tx, handle) = threads_iter.next().unwrap();
-    drop(tx);
-    stations = handle.join().unwrap();
-
-    for (tx, handle) in threads_iter {
-        drop(tx);
-        let following_stations = handle.join().unwrap();
-        merge_stations(&mut stations, following_stations);
-    }
-    stations
-}
-
-fn work(receiver: Receiver<String>) -> Stations {
+fn process_chunk(path: String, start: u64, end: u64) -> Stations {
+    let f = File::open(path).unwrap();
+    let mut reader = BufReader::new(f);
+    let mut buf = Vec::new();
+    let ascii_line_sep = '\n'.to_ascii_lowercase() as u8;
+    let mut read_bytes = 0;
     let mut stations = HashMap::new();
-    loop {
-        let obs = match receiver.recv() {
-            Ok(line) => parse_observation(&line).unwrap(),
-            _ => break,
-        };
-        update_stations(&mut stations, obs);
+
+    if start > 0 {
+        let mut t_buf = [0; 1];
+        reader.seek(SeekFrom::Start(start - 1)).unwrap();
+        reader.read_exact(&mut t_buf).unwrap();
+        if t_buf[0] != ascii_line_sep {
+            let nb: u64 = reader.read_until(ascii_line_sep ,&mut buf).unwrap() as u64;
+            read_bytes = read_bytes + nb;
+        }
+        else {
+            reader.seek(SeekFrom::Start(start)).unwrap();
+        }
+    }
+    while read_bytes < end - start {
+        buf.clear();
+        let nb = reader.read_until(ascii_line_sep, &mut buf).unwrap() as u64;
+        read_bytes = read_bytes + nb;
+        let line = std::str::from_utf8(&buf).unwrap();
+        if let Some(observation) = parse_observation(line){
+            update_stations(&mut stations, observation)
+        }
     }
     stations
 }
 
-fn spawn_threads(nb_workers: usize) -> Vec<(Sender<String>, JoinHandle<Stations>)> {
-    let mut threads = Vec::with_capacity(nb_workers);
-    for _ in 0..nb_workers {
-        let (tx, rx) = channel();
-        let handle = thread::spawn(move || work(rx));
-        threads.push((tx, handle))
+fn get_chunks(file_size: u64, nb_workers: usize) -> Vec<(u64, u64)> {
+    let mut res = Vec::new();
+    let chunk_size = file_size / (nb_workers as u64);
+    for i in (0..(file_size + 1)).step_by(chunk_size as usize) {
+        let mut end = i + chunk_size;
+        if end > file_size {
+            end = file_size
+        }
+        res.push((i, end))
     }
-    threads
+    res
 }
+

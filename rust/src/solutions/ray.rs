@@ -35,13 +35,3 @@ pub fn solve(path: &str, nb_workers: usize) {
         );
     sort_and_print_stations(stations);
 }
-pub fn main() {
-    let data = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
-    let chunk_size = 3;
-    let chunks: Vec<_> = data.par_chunks(chunk_size).collect();
-
-    for chunk in chunks {
-        println!("{:?}", chunk);
-    }
-}

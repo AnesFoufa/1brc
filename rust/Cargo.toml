@@ -9,3 +9,4 @@ edition = "2021"
 rayon = "1.10.0"
 polars = {version = "0.39.2", features = ["lazy", "streaming"]}
 polars-lazy = {version = "0.39.2", features = ["csv"]}
+clap = {version = "4.5.4", features = ["derive"]}

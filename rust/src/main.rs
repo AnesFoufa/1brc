@@ -1,39 +1,34 @@
-use std::env;
+use clap::{Parser, Subcommand};
+use solutions::{baseline, plrs, ray, threaded};
 use std::io::{self};
 use std::usize;
 
 pub mod domain;
 pub mod solutions;
 
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+#[command(propagate_version = true)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+    path: String,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    Rayon { nb_threads: usize },
+    Polars,
+    Multithreaded { nb_threads: usize },
+    Sequential,
+}
+
 fn main() -> io::Result<()> {
-    let (path, nb_workers) = parse_parameters()?;
-
-    if nb_workers == 0 {
-        if env::var("POLARS").is_ok() {
-            println!("POLARS");
-            solutions::plrs::solve(&path);
-
-        } else {
-        solutions::baseline::solve(&path)?;
-        }
-    } else {
-        if env::var("RAYON").is_ok() {
-            println!("RAYON");
-            solutions::ray::solve(&path, nb_workers)
-        } else {
-            solutions::threaded::solve(&path, nb_workers);
-        }
+    let cli = Cli::parse();
+    match cli.command {
+        Commands::Sequential => baseline::solve(&cli.path),
+        Commands::Polars => Ok(plrs::solve(&cli.path)),
+        Commands::Multithreaded { nb_threads } => Ok(threaded::solve(&cli.path, nb_threads)),
+        Commands::Rayon { nb_threads } => Ok(ray::solve(&cli.path, nb_threads)),
     }
-    Ok(())
 }
-
-fn parse_parameters() -> io::Result<(String, usize)> {
-    let path = std::env::args().nth(1).expect("no path given");
-    let nb_workers: usize = std::env::args()
-        .nth(2)
-        .unwrap_or("0".into())
-        .parse()
-        .expect("expected a positive number");
-    Ok((path, nb_workers))
-}
-

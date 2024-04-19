@@ -54,7 +54,7 @@ impl Temperatures {
         } else {
             self.min
         };
-        self.max = if self.max > other.max {
+        self.max = if self.max < other.max {
             other.max
         } else {
             self.max
